@@ -390,27 +390,49 @@ CO2=0.8"></textarea>
   <div class="box">
     <span class="close" onclick="closeDisclaimer()" aria-label="Close">&times;</span>
     <h2 style="margin-top:0">Disclaimers, Standards & Assumptions</h2>
-    <p class="muted">This calculator is intended for <b>preliminary engineering</b> and training use. It does not replace certified custody transfer systems.</p>
+
+    <p class="muted">
+      The Asianloop Custody Calculator is provided as a <b>supporting tool</b> for engineering checks, proving activities, 
+      audit verification, and training. It <u>does not replace certified custody transfer systems</u>. 
+      All official measurements must be performed with validated flow computers, provers, or metering systems in compliance with governing standards.
+    </p>
+
     <h3>Standards Referenced</h3>
     <ul class="list">
-      <li><b>API MPMS 11.1</b> – Temperature and pressure volume correction factors (liquids).</li>
-      <li><b>ISO 5167</b> – DP flow (orifice etc.).</li>
-      <li><b>OIML R117</b> – Liquids other than water.</li>
-      <li><b>AGA Rpt No. 3/7/9</b> – Gas metering (orifice/turbine/ultrasonic).</li>
-      <li><b>AGA Rpt No. 8</b> – Compressibility (Z) of natural gas.</li>
+      <li><b>Liquids:</b> API MPMS 11.1 (temperature & pressure volume correction); ISO 5167-1/2 (DP / Orifice); OIML R117-1 (liquids other than water).</li>
+      <li><b>Custody Transfer:</b> API MPMS 21.2 – Custody Transfer of Crude Oil.</li>
+      <li><b>Natural Gas:</b> AGA Report No.3 (orifice), AGA 7 (turbine), AGA 9 (ultrasonic), AGA 8 (compressibility factors: Papay, GERG, and AGA8-Detail).</li>
+      <li><b>Wet Gas / Multiphase:</b> API MPMS 22.2 and ISO/TR 11583 (wet gas correlations & guidance).</li>
     </ul>
+
     <h3>Scope & Intended Use</h3>
     <ul class="list">
-      <li>Liquids: corrected volume, optional mass & energy.</li>
-      <li>Dry Gas: standardized volume using Z; AGA8-Detail auto-used if present.</li>
+      <li><b>Liquids:</b> Corrected volume (V<sub>corr</sub>), with optional mass and energy if density and HHV are provided.</li>
+      <li><b>Dry Gas:</b> Standardized volume (Q<sub>std</sub>) using Z-factor; supports Manual Z, Papay approximation, and AGA8-Detail upgrade when composition is supplied.</li>
+      <li><b>Training:</b> Demonstrate the influence of temperature, density, compressibility, and standards on custody values.</li>
     </ul>
+
+    <h3>Assumptions</h3>
+    <ul class="list">
+      <li>Liquids are homogeneous, single-phase hydrocarbons.</li>
+      <li>Thermal expansion (α) approximation valid only for modest ΔT; API tables preferred for custody.</li>
+      <li>Gas calculations assume representative composition or valid SG; Papay/Kay approximations are indicative only.</li>
+      <li>AGA8-Detail computation requires valid gas composition input (mole %).</li>
+    </ul>
+
     <h3>Limitations</h3>
     <ul class="list">
-      <li>Not for contractual tickets; use certified systems.</li>
+      <li>Not valid for contractual or fiscal tickets — use certified systems.</li>
+      <li>Not suitable for multiphase / wet gas allocation without specialized meters or test separators.</li>
+      <li>Does not include detailed uncertainty analysis or pressure loss corrections.</li>
     </ul>
-    <p class="muted">© Asianloop Sdn Bhd. Always verify against governing contracts/standards.</p>
+
+    <p class="muted">
+      © 2025 Asianloop Sdn Bhd. This tool is provided “as-is.” Always verify results against contractual standards and governing regulations.
+    </p>
   </div>
 </div>
+
 
 
 
