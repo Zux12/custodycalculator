@@ -1,0 +1,14 @@
+body { font-family: Arial, sans-serif; margin:0; background:#f4f6f9; color:#222; }
+header.topbar { display:flex; align-items:center; gap:12px; background:#1a237e; color:#fff; padding:10px 20px; }
+header .logo { height:40px; background:#fff; border-radius:6px; padding:4px; }
+.wrap { padding:20px; }
+h2 { color:#1a237e; }
+.inputs label { display:block; margin:8px 0; }
+button { margin:6px; padding:10px 16px; border:0; border-radius:6px; background:#1a237e; color:#fff; cursor:pointer; }
+button:hover { background:#3949ab; }
+#results { margin-top:20px; padding:12px; background:#fff; border:1px solid #ccc; border-radius:6px; }
+footer { text-align:center; background:#1a237e; color:#fff; padding:12px; }
+footer a { color:#90caf9; text-decoration:none; }
+.modal { display:none; position:fixed; z-index:10; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.6); }
+.modal-content { background:#fff; margin:10% auto; padding:20px; border-radius:8px; width:80%; max-width:600px; }
+.close { float:right; cursor:pointer; font-size:24px; }
