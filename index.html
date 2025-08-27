@@ -392,12 +392,7 @@ CO2=0.8"></textarea>
   </div>
 </div>
 
-<!-- Load AGA8-Detail (open-source WASM build) via CDN -->
-<script type="module">
-  import initAGA8 from "https://cdn.jsdelivr.net/npm/@sctg/aga8-js/+esm";
-  // Expose for gas.js to pick up
-  window.AGA8wasm = initAGA8;
-</script>
+
 
 <!-- Robust loader for AGA8-Detail (tries multiple CDNs & export shapes, no hard failure) -->
 <script type="module">
