@@ -394,50 +394,7 @@ CO2=0.8"></textarea>
 
 
 
-<!-- Robust loader for AGA8-Detail (tries multiple CDNs & export shapes, no hard failure) -->
-<script type="module">
-  (async () => {
-    // Already available? (skip if gas.js or another script set it)
-    if (window.AGA8 || window.AGA8wasm) return;
 
-    const candidates = [
-      // jsDelivr ESM wrapper
-      "https://cdn.jsdelivr.net/npm/@sctg/aga8-js/+esm",
-      // unpkg ESM wrapper
-      "https://unpkg.com/@sctg/aga8-js/+esm",
-      // Fallbacks: try root (some builds re-export from package root)
-      "https://cdn.jsdelivr.net/npm/@sctg/aga8-js",
-      "https://unpkg.com/@sctg/aga8-js"
-    ];
-
-    for (const url of candidates) {
-      try {
-        const mod = await import(/* @vite-ignore */ url);
-        // Try the usual shapes in order
-        const f =
-          (typeof mod === "function" ? mod :
-          (typeof mod.default === "function" ? mod.default :
-          (typeof mod.AGA8wasm === "function" ? mod.AGA8wasm :
-          (mod && typeof mod.init === "function" ? mod.init : null))));
-
-        if (f) {
-          window.AGA8wasm = f; // gas.js will await this to init WASM
-          console.log("[AGA8] Loaded from:", url);
-          return;
-        }
-        // Some builds expose a ready object (already initialized)
-        if (mod && (mod.AGA8 || mod.default?.AGA8)) {
-          window.AGA8 = mod.AGA8 || mod.default.AGA8;
-          console.log("[AGA8] Ready object found at:", url);
-          return;
-        }
-      } catch (e) {
-        console.warn("[AGA8] Import failed from", url, e);
-      }
-    }
-    console.warn("[AGA8] Could not load AGA8-Detail from CDN; Papay fallback will be used.");
-  })();
-</script>
 
 <!-- Self-hosted AGA8 Detail (no CORS) -->
 <script src="/vendor/aga8/polyfit.min.js"></script>
