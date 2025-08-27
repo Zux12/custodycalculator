@@ -5,6 +5,11 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "@sctg/aga8-js": "^1.0.9",
+    "@sctg/polyfitjs": "^0.0.3"
   }
 }
+
+
+
