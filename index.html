@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Asianloop Custody Calculator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <img src="logo.jpg" alt="Asianloop Logo" class="logo"/>
+    <h1>Asianloop Custody Calculator</h1>
+  </header>
+
+  <main class="wrap">
+    <section class="calculator">
+      <h2>Corrected Volume · Mass · Energy</h2>
+      <div class="inputs">
+        <label>Measured Volume (V): <input id="V" type="number" step="any"></label>
+        <select id="unitV">
+          <option value="m3">m³</option>
+          <option value="L">L</option>
+          <option value="bbl">bbl</option>
+          <option value="galUS">US gal</option>
+        </select>
+
+        <label>Measured Temp (°C): <input id="T" type="number" step="any"></label>
+        <label>Reference Temp (°C): <input id="Tref" type="number" value="15"></label>
+
+        <label>Mode:
+          <select id="ctlMode">
+            <option value="approx">Approx (α)</option>
+            <option value="manual">Manual CTL</option>
+          </select>
+        </label>
+        <label id="alphaBox">α (per °C): <input id="alpha" type="number" step="any" value="0.0007"></label>
+        <label id="ctlBox" style="display:none">CTL: <input id="CTL" type="number" step="any"></label>
+
+        <label>Density @ Ref (kg/m³): <input id="rho" type="number" step="any"></label>
+        <label>HHV (MJ/kg): <input id="hhv" type="number" step="any"></label>
+      </div>
+      <button onclick="calc()">Calculate</button>
+      <button onclick="exportXLSX()">Export as Spreadsheet</button>
+      <button onclick="openDisclaimer()">Disclaimers & Standards</button>
+
+      <div id="results"></div>
+    </section>
+
+    <section class="docs">
+      <h2>Reference Documents</h2>
+      <select id="docSelect" onchange="openDoc()">
+        <option value="">-- Select a document --</option>
+        <option value="https://www.api.org/-/media/Files/Publications/MPMS/Chapter-11/11-1-2004.pdf">API MPMS 11.1 (Temperature/Pressure Correction)</option>
+        <option value="https://law.resource.org/pub/us/cfr/ibr/003/api.21.2.1999.pdf">API MPMS 21.2 (Custody Transfer of Crude Oil)</option>
+        <option value="https://www.iso.org/standard/39379.html">ISO 5167 (Flow Measurement by Orifice Plates)</option>
+        <option value="https://www.oiml.org/en/files/pdf/r/R117-1-e06.pdf">OIML R117 (Measuring Systems for Liquids Other Than Water)</option>
+      </select>
+    </section>
+  </main>
+
+  <footer>
+    <p>Copyright © Asianloop Sdn Bhd Malaysia. All rights reserved.</p>
+    <p><a href="https://asian-loop.com" target="_blank">asian-loop.com</a> | 
+       <a href="https://www.linkedin.com/company/asianloop-sdn-bhd/" target="_blank">LinkedIn</a></p>
+  </footer>
+
+  <!-- Disclaimer modal -->
+  <div id="disclaimerModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeDisclaimer()">&times;</span>
+      <h2>Disclaimers, Standards & Assumptions</h2>
+      <p>This calculator is for educational and preliminary engineering use only.</p>
+      <ul>
+        <li>Based on API MPMS 11.1 (2004) Chapter 11 – Temperature and Pressure Correction.</li>
+        <li>Assumes liquid hydrocarbons; not valid for multiphase flow.</li>
+        <li>Gas custody transfer requires compressibility (AGA3, AGA8) not included here.</li>
+        <li>Not suitable for meters without proper calibration or traceability.</li>
+        <li>All results approximate unless CTL is taken from official API tables.</li>
+      </ul>
+      <p>Limitations: does not replace certified custody transfer systems.</p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
