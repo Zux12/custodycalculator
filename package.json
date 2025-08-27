@@ -1,13 +1,8 @@
 {
   "name": "asianloop-custody-calculator",
   "version": "1.0.0",
-  "description": "Asianloop Simple Custody Calculator (Corrected Volume, Mass, Energy) with disclaimers, standards links, and spreadsheet export",
-  "main": "server.js",
   "scripts": {
     "start": "node server.js"
-  },
-  "engines": {
-    "node": ">=18"
   },
   "dependencies": {
     "express": "^4.19.2"
