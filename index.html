@@ -35,16 +35,55 @@
   .close{float:right;font-size:24px;cursor:pointer;color:var(--muted)}
   .list{margin:0 0 6px 18px;line-height:1.5}
   @media (max-width:860px){ .grid2,.grid3{grid-template-columns:1fr} .topbar{position:static} }
+
+  /* === Mobile header fixes === */
+.topbar{ flex-wrap: wrap; }            /* allow logo/title to wrap on small screens */
+.hdr{ display:flex; flex-direction:column; gap:4px; min-width:0; }
+
+@media (max-width: 640px){
+  .topbar{ padding:12px 14px; gap:10px; align-items:flex-start; }
+  .logo{ height:32px; padding:4px; border-radius:8px; }   /* smaller logo */
+  .brand{ font-size:1.05rem; line-height:1.25; }          /* shrink title a bit */
+  .pill{ display:inline-block; margin-left:0; margin-top:6px; } /* put pill on its own line */
+  .sub{ font-size:.78rem !important; }                     /* smaller subtitle */
+}
+
+  /* === Modal scrolling + background lock === */
+.no-scroll { overflow: hidden; height: 100vh; }        /* lock page when modal open */
+
+.modal{ display:none; position:fixed; inset:0; z-index:50;
+        background:rgba(0,0,0,0.6);
+        /* stop scroll chaining to the page on mobile */
+        overscroll-behavior: contain;
+        touch-action: none; }
+
+.modal.show { display:flex; align-items:center; justify-content:center; }
+
+.modal > .box{
+  background:#0b1220; border:1px solid var(--line); border-radius:14px;
+  width:min(92vw, 760px);
+  max-height: 80vh;                 /* key: cap height */
+  overflow:auto;                    /* key: enable internal scroll */
+  -webkit-overflow-scrolling: touch;/* smooth iOS scroll */
+  padding:18px;
+}
+
 </style>
 </head>
 <body>
-  <header class="topbar">
-    <img src="logo.jpg" class="logo" alt="Asianloop Logo">
-    <div>
-      <div class="brand">Asianloop Custody Calculator <span class="pill">Corrected Volume · Mass · Energy</span></div>
-      <div class="muted" style="font-size:.85rem">Single-file app · localStorage · XLSX export</div>
+<header class="topbar">
+  <img src="logo.jpg" class="logo" alt="Asianloop Logo">
+  <div class="hdr">
+    <div class="brand">
+      Asianloop Custody Calculator
+      <span class="pill">Corrected Volume · Mass · Energy</span>
     </div>
-  </header>
+    <div class="muted sub" style="font-size:.85rem">
+      Single-file app · localStorage · XLSX export
+    </div>
+  </div>
+</header>
+
 
   <main class="wrap">
     <section class="card">
@@ -328,14 +367,40 @@
     if (url) window.open(url, "_blank", "noopener");
   }
 
-  // --- Modal controls ---
-  function openDisclaimer(){ document.getElementById('disclaimerModal').style.display = 'block'; }
-  function closeDisclaimer(){ document.getElementById('disclaimerModal').style.display = 'none'; }
-  window.openDisclaimer = openDisclaimer;
-  window.closeDisclaimer = closeDisclaimer;
-  window.calc = calc;
-  window.exportXLSX = exportXLSX;
-  window.openDoc = openDoc;
+
+  // --- Modal controls (new) ---
+const modal = document.getElementById('disclaimerModal');
+let _savedScrollY = 0;
+
+function openDisclaimer(){
+  _savedScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+  document.body.classList.add('no-scroll');
+  document.body.style.top = `-${_savedScrollY}px`;
+
+  modal.classList.add('show');
+  modal.setAttribute('aria-hidden','false');
+}
+
+function closeDisclaimer(){
+  modal.classList.remove('show');
+  modal.setAttribute('aria-hidden','true');
+
+  document.body.classList.remove('no-scroll');
+  document.body.style.top = '';
+  window.scrollTo(0, _savedScrollY);
+}
+
+modal.addEventListener('touchmove', function(e){
+  if (e.target === modal) e.preventDefault();
+}, { passive:false });
+
+window.openDisclaimer = openDisclaimer;
+window.closeDisclaimer = closeDisclaimer;
+window.calc = calc;
+window.exportXLSX = exportXLSX;
+window.openDoc = openDoc;
+
+  
 </script>
 </body>
 </html>
