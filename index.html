@@ -523,6 +523,52 @@ CO2=0.8"></textarea>
   }
   modal.addEventListener('touchmove', function(e){ if (e.target === modal) e.preventDefault(); }, { passive:false });
 
+
+<script>
+// Call server-side AGA8 when composition mode is selected
+async function fetchAGA8ZFromServer(P_psia, T_R, comp){
+  try {
+    const resp = await fetch('/api/aga8-z', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        P_psia,
+        T_R,
+        mix: {
+          methane: comp.CH4||0,
+          ethane: comp.C2H6||0,
+          propane: comp.C3H8||0,
+          isobutane: comp.iC4||0,
+          n_butane: comp.nC4||0,
+          isopentane: comp.iC5||0,
+          n_pentane: comp.nC5||0,
+          n_hexane: comp.C6||0,
+          nitrogen: comp.N2||0,
+          carbon_dioxide: comp.CO2||0,
+          hydrogen_sulfide: comp.H2S||0,
+          hydrogen: comp.H2||0,
+          oxygen: comp.O2||0,
+          helium: comp.He||0,
+          argon: comp.Ar||0,
+          carbon_monoxide: comp.CO||0,
+          water: 0, n_heptane:0, n_octane:0, n_nonane:0, n_decane:0
+        }
+      })
+    });
+    const j = await resp.json();
+    if (!j.ok) throw new Error(j.error || 'AGA8 server error');
+    return { Z: j.Z, meta: j.method || 'AGA8-Detail' };
+  } catch (e) {
+    console.warn('Server AGA8 failed, using Papay:', e);
+    return null;
+  }
+}
+</script>
+
+
+
+
+  
   /* ================= Gas bridge (no duplicates) ================= */
   async function runCalcGas(){
     try{
@@ -540,31 +586,74 @@ CO2=0.8"></textarea>
         gcv: parseFloat(document.getElementById('g_gcv').value),
         stdPreset: document.getElementById('g_stdPreset').value
       };
-      const r = await ASIANLOOP_GAS.calcGas(inputs);
-      // Show Z + clear method badge
-const meta = (r.meta || '');
-const method = meta.toLowerCase().includes('aga8-detail') ? 'AGA8-Detail'
-             : meta.toLowerCase().includes('gerg')        ? 'GERG-2008'
-             : meta.toLowerCase().includes('manual')      ? 'Manual Z'
-             : 'Papay';
+let r = await ASIANLOOP_GAS.calcGas(inputs);
+
+// If user chose composition and client fell back to Papay, try server AGA8 for higher accuracy
+if (inputs.Zmode === 'compo' && r && r.meta && r.meta.toLowerCase().includes('papay')) {
+  try {
+    // Recreate composition object from textarea
+    const comp = (function parseCompo(text){
+      const CRIT_KEYS = new Set(['CH4','C2H6','C3H8','IC4','NC4','IC5','NC5','C6','N2','CO2','H2S','H2','O2','HE','AR','CO']);
+      const out = {};
+      (text||'').split(/\n|,|;/).map(s=>s.trim()).filter(Boolean).forEach(ln=>{
+        const m = ln.match(/^([A-Za-z0-9]+)\s*[:=]\s*([\d.]+)%?$/); if(!m) return;
+        let k = m[1].toUpperCase(), v = parseFloat(m[2]); if(!CRIT_KEYS.has(k)||isNaN(v)) return;
+        const map = {C1:'CH4',IC4:'iC4',NC4:'nC4',IC5:'iC5',NC5:'nC5',HE:'He',AR:'Ar'};
+        k = map[k] || k;
+        out[k] = (out[k]||0) + v;
+      });
+      // normalize to 1.0
+      const s = Object.values(out).reduce((a,b)=>a+b,0)||1;
+      for (const k in out) out[k] = out[k]/s;
+      return out;
+    })(document.getElementById('g_compo').value);
+
+    const srv = await fetchAGA8ZFromServer(r.P_psia, r.T_R, comp);
+    if (srv && srv.Z > 0 && srv.Z < 2) {
+      r.Z = srv.Z;
+      r.meta = srv.meta;
+      // Recompute Qstd with the better Z
+      const Qstd_scfh = (r.Qstd_sm3h * 35.3146667); // back to SCFH to reuse relation
+      const T_R = r.T_R, Tstd_R = r.Tstd_R, P_psia = r.P_psia, Pstd_psia = r.Pstd_psia;
+      const Qline_scfh = Qstd_scfh / ((P_psia/(r.Z*Pstd_psia)) * (Tstd_R/T_R)); // reverse
+      const Qstd_scfh2 = Qline_scfh * (P_psia/(srv.Z*Pstd_psia)) * (Tstd_R/T_R);
+      r.Qstd_sm3h = Qstd_scfh2 / 35.3146667;
+    }
+  } catch (err) {
+    console.warn('AGA8 server upgrade failed:', err);
+    // keep Papay result
+  }
+}
+
+// === UI update (unchanged) ===
+const method = (r.meta||'').toLowerCase().includes('aga8') ? 'AGA8-Detail'
+            : (r.meta||'').toLowerCase().includes('gerg')    ? 'GERG-2008'
+            : (r.meta||'').toLowerCase().includes('manual')  ? 'Manual Z'
+            : 'Papay';
 document.getElementById('g_outZ').innerHTML =
   `${(r.Z!=null ? Number(r.Z).toPrecision(6) : '—')} <span class="badge">${method}</span>`;
 
-      const stdLabel = (inputs.stdPreset==='60F')?'14.696 psia & 60 °F':'1 atm & 15 °C';
-      document.getElementById('g_outStd').textContent = stdLabel;
-      document.getElementById('g_outQstd').textContent = `${(r.Qstd_sm3h!=null? Number(r.Qstd_sm3h).toPrecision(7):'—')} Sm³/h`;
-      document.getElementById('g_outMdot').textContent = (r.mdot!=null) ? `${Number(r.mdot).toPrecision(7)} kg/h` : '—';
-      document.getElementById('g_outEdot').textContent = (r.edot!=null) ? `${Number(r.edot).toPrecision(7)} MJ/h` : '—';
+const stdLabel = (inputs.stdPreset==='60F')?'14.696 psia & 60 °F':'1 atm & 15 °C';
+document.getElementById('g_outStd').textContent = stdLabel;
+document.getElementById('g_outQstd').textContent = `${(r.Qstd_sm3h!=null? Number(r.Qstd_sm3h).toPrecision(7):'—')} Sm³/h`;
+document.getElementById('g_outMdot').textContent = (r.mdot!=null) ? `${Number(r.mdot).toPrecision(7)} kg/h` : '—';
+document.getElementById('g_outEdot').textContent = (r.edot!=null) ? `${Number(r.edot).toPrecision(7)} MJ/h` : '—';
 
-      // persist for export
-      localStorage.setItem("asianloop_last_calc", JSON.stringify({
-        type:"gas",
-        Qline:inputs.Qline, Qunit:inputs.Qunit,
-        P:r.P_psia, Punit:"psia(abs)", T_C:inputs.T_C, T_R:r.T_R,
-        Pstd_psia:r.Pstd_psia, Tstd_R:r.Tstd_R,
-        Z:r.Z, Zmeta:r.meta,
-        Qstd_sm3h:r.Qstd_sm3h, rhoStd:r.rhoStd, gcv:inputs.gcv, mdot:r.mdot, edot:r.edot
-      }));
+// persist
+localStorage.setItem("asianloop_last_calc", JSON.stringify({
+  type:"gas",
+  Qline:inputs.Qline, Qunit:inputs.Qunit,
+  P:r.P_psia, Punit:"psia(abs)", T_C:inputs.T_C, T_R:r.T_R,
+  Pstd_psia:r.Pstd_psia, Tstd_R:r.Tstd_R,
+  Z:r.Z, Zmeta:r.meta,
+  Qstd_sm3h:r.Qstd_sm3h, rhoStd:r.rhoStd, gcv:inputs.gcv, mdot:r.mdot, edot:r.edot
+}));
+
+
+
+
+
+  
     }catch(e){
       alert(e.message || String(e));
     }
