@@ -569,6 +569,23 @@ document.getElementById('g_outZ').innerHTML =
     }
   }
 
+  // --- Toggle visibility of Z-factor input boxes ---
+const gZmode = document.getElementById('g_Zmode');
+const gManualBox = document.getElementById('g_manualZ_box');
+const gGammaBox = document.getElementById('g_gamma_box');
+const gCompoBlock = document.getElementById('g_compo_block');
+
+function updateZmodeUI() {
+  const m = gZmode.value;
+  gManualBox.style.display = (m === 'manual') ? '' : 'none';
+  gGammaBox.style.display  = (m === 'gravity') ? '' : 'none';
+  gCompoBlock.style.display= (m === 'compo') ? '' : 'none';
+}
+
+gZmode.addEventListener('change', updateZmodeUI);
+// Run once on load to set the right state
+updateZmodeUI();
+
   // expose
   window.calc = calc;
   window.runCalcGas = runCalcGas;
