@@ -103,15 +103,23 @@ function pseudoCritFromGamma(gamma){
 // Optionally call AGA8-Detail if available
 async function zAGA8Detail_ifAvailable(P_psia, T_R, comp){
   try{
-    // Expect either window.AGA8 (pre-initialized) or window.AGA8wasm() to init
+    // already initialized?
     let AGA8 = window.AGA8;
-    if(!AGA8 && typeof window.AGA8wasm==='function'){
-      AGA8 = await window.AGA8wasm(); // init WASM
+
+    // if a lazy init function is exposed (e.g., global init that returns an object)
+    if (!AGA8 && typeof window.AGA8wasm === 'function') {
+      AGA8 = await window.AGA8wasm();
       window.AGA8 = AGA8;
     }
-    if(!AGA8) return {Z:null, used:false, meta:"Papay (fallback)"};
 
-    // Map composition to AGA8 mixture names (subset)
+    // Some bundles expose an init method requiring a wasm path
+    if (AGA8 && typeof AGA8.init === 'function') {
+      await AGA8.init(window.AGA8_WASM_URL || '/vendor/aga8/aga8.wasm');
+    }
+
+    if (!AGA8) return { Z:null, used:false, meta:"Papay (fallback)" };
+
+    // Build a mixture map that several libs understand
     const mix = {
       methane: comp.CH4||0,
       ethane: comp.C2H6||0,
@@ -132,23 +140,31 @@ async function zAGA8Detail_ifAvailable(P_psia, T_R, comp){
       water: 0, n_heptane:0, n_octane:0, n_nonane:0, n_decane:0
     };
 
-    // Use AGA8 DETAIL at (P,T) to get Z:
-    // Many libs want density iteration; we can use GERG/Detail helper if exposed.
-    if(AGA8.SetupDetail) AGA8.SetupDetail(); // switch method if supported
-    // Use PropertiesDetailPT if available; otherwise use GERG density iteration fallback
-    if(AGA8.PropertiesDetailPT){
+    // Try common method names in order
+    if (typeof AGA8.PropertiesDetailPT === 'function') {
       const props = AGA8.PropertiesDetailPT(P_psia, T_R, mix);
-      return {Z: props.Z, used:true, meta:"AGA8-Detail"};
-    } else if(AGA8.PropertiesGERG_PT){
-      const props = AGA8.PropertiesGERG_PT(P_psia, T_R, mix);
-      return {Z: props.Z, used:true, meta:"GERG-2008"};
+      return { Z: props.Z, used:true, meta:"AGA8-Detail" };
     }
-    return {Z:null, used:false, meta:"Papay (fallback)"};
-  }catch(e){
+    if (typeof AGA8.DetailPT === 'function') {
+      const props = AGA8.DetailPT(P_psia, T_R, mix);
+      return { Z: props.Z, used:true, meta:"AGA8-Detail" };
+    }
+    if (typeof AGA8.PropertiesGERG_PT === 'function') {
+      const props = AGA8.PropertiesGERG_PT(P_psia, T_R, mix);
+      return { Z: props.Z, used:true, meta:"GERG-2008" };
+    }
+    if (typeof AGA8.calculate === 'function') {
+      const props = AGA8.calculate({ P_psia, T_R, mix });
+      return { Z: props.Z, used:true, meta: props.method || "AGA8-Detail" };
+    }
+
+    return { Z:null, used:false, meta:"Papay (fallback)" };
+  } catch (e) {
     console.warn("AGA8 detail not available:", e);
-    return {Z:null, used:false, meta:"Papay (fallback)"};
+    return { Z:null, used:false, meta:"Papay (fallback)" };
   }
 }
+
 
 // Main calculator
 async function calcGas(inputs){
