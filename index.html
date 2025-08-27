@@ -18,8 +18,9 @@
   h1,h2{margin:0}
   h2{font-size:1.15rem;margin-bottom:8px}
   label{font-size:.92rem;color:var(--muted);margin-bottom:6px;display:block}
-  input,select{width:100%;background:#091121;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:1rem}
-  input:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px}
+  input,select,textarea{width:100%;background:#091121;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px 12px;font-size:1rem}
+  textarea{min-height:110px;resize:vertical}
+  input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:1px}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
   .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
   .btn{background:linear-gradient(90deg,#06b6d4,#22d3ee);color:#001016;border:0;border-radius:12px;padding:12px 16px;font-weight:700;cursor:pointer}
@@ -37,37 +38,24 @@
   @media (max-width:860px){ .grid2,.grid3{grid-template-columns:1fr} .topbar{position:static} }
 
   /* === Mobile header fixes === */
-.topbar{ flex-wrap: wrap; }            /* allow logo/title to wrap on small screens */
-.hdr{ display:flex; flex-direction:column; gap:4px; min-width:0; }
-
-@media (max-width: 640px){
-  .topbar{ padding:12px 14px; gap:10px; align-items:flex-start; }
-  .logo{ height:32px; padding:4px; border-radius:8px; }   /* smaller logo */
-  .brand{ font-size:1.05rem; line-height:1.25; }          /* shrink title a bit */
-  .pill{ display:inline-block; margin-left:0; margin-top:6px; } /* put pill on its own line */
-  .sub{ font-size:.78rem !important; }                     /* smaller subtitle */
-}
+  .topbar{ flex-wrap: wrap; }
+  .hdr{ display:flex; flex-direction:column; gap:4px; min-width:0; }
+  @media (max-width: 640px){
+    .topbar{ padding:12px 14px; gap:10px; align-items:flex-start; }
+    .logo{ height:32px; padding:4px; border-radius:8px; }
+    .brand{ font-size:1.05rem; line-height:1.25; }
+    .pill{ display:inline-block; margin-left:0; margin-top:6px; }
+    .sub{ font-size:.78rem !important; }
+  }
 
   /* === Modal scrolling + background lock === */
-.no-scroll { overflow: hidden; height: 100vh; }        /* lock page when modal open */
+  .no-scroll { overflow: hidden; height: 100vh; }
+  .modal{ display:none; position:fixed; inset:0; z-index:50; background:rgba(0,0,0,0.6); overscroll-behavior: contain; touch-action: none; }
+  .modal.show { display:flex; align-items:center; justify-content:center; }
+  .modal > .box{ background:#0b1220; border:1px solid var(--line); border-radius:14px; width:min(92vw, 760px); max-height: 80vh; overflow:auto; -webkit-overflow-scrolling: touch; padding:18px; }
 
-.modal{ display:none; position:fixed; inset:0; z-index:50;
-        background:rgba(0,0,0,0.6);
-        /* stop scroll chaining to the page on mobile */
-        overscroll-behavior: contain;
-        touch-action: none; }
-
-.modal.show { display:flex; align-items:center; justify-content:center; }
-
-.modal > .box{
-  background:#0b1220; border:1px solid var(--line); border-radius:14px;
-  width:min(92vw, 760px);
-  max-height: 80vh;                 /* key: cap height */
-  overflow:auto;                    /* key: enable internal scroll */
-  -webkit-overflow-scrolling: touch;/* smooth iOS scroll */
-  padding:18px;
-}
-
+  /* Helpers */
+  .hint{font-size:.8rem;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -76,7 +64,7 @@
   <div class="hdr">
     <div class="brand">
       Asianloop Custody Calculator
-      <span class="pill">Corrected Volume · Mass · Energy</span>
+      <span class="pill">Corrected Volume · Mass · Energy · Dry Gas (Z-factor)</span>
     </div>
     <div class="muted sub" style="font-size:.85rem">
       Single-file app · localStorage · XLSX export
@@ -84,190 +72,313 @@
   </div>
 </header>
 
-
-  <main class="wrap">
-    <section class="card">
-      <h2>Inputs</h2>
-      <div class="grid2" style="margin-top:8px">
-        <div>
-          <label>Measured Volume (V)</label>
-          <input id="V" type="number" step="any" placeholder="e.g. 1000">
-          <div class="muted" style="font-size:.8rem">Units at right</div>
-        </div>
-        <div>
-          <label>Volume Unit</label>
-          <select id="unitV">
-            <option value="m3">m³</option>
-            <option value="L">L</option>
-            <option value="bbl">bbl (oil)</option>
-            <option value="galUS">gal (US)</option>
-          </select>
-        </div>
+<main class="wrap">
+  <!-- ================== LIQUIDS (unchanged) ================== -->
+  <section class="card">
+    <h2>Inputs — Liquids</h2>
+    <div class="grid2" style="margin-top:8px">
+      <div>
+        <label>Measured Volume (V)</label>
+        <input id="V" type="number" step="any" placeholder="e.g. 1000">
+        <div class="muted" style="font-size:.8rem">Units at right</div>
       </div>
-
-      <div class="grid2" style="margin-top:8px">
-        <div>
-          <label>Measured Temperature T (°C)</label>
-          <input id="T" type="number" step="any" placeholder="e.g. 28">
-        </div>
-        <div>
-          <label>Reference Temperature T<sub>ref</sub> (°C)</label>
-          <input id="Tref" type="number" step="any" value="15">
-        </div>
+      <div>
+        <label>Volume Unit</label>
+        <select id="unitV">
+          <option value="m3">m³</option>
+          <option value="L">L</option>
+          <option value="bbl">bbl (oil)</option>
+          <option value="galUS">gal (US)</option>
+        </select>
       </div>
-
-      <div class="grid3" style="margin-top:8px">
-        <div>
-          <label>CTL Mode</label>
-          <select id="ctlMode">
-            <option value="approx">Approx (using α)</option>
-            <option value="manual">Manual CTL (API table)</option>
-          </select>
-        </div>
-        <div id="alphaBox">
-          <label>Thermal Expansion Coefficient α (per °C)</label>
-          <input id="alpha" type="number" step="any" value="0.0007" placeholder="0.00065–0.00085 crude">
-        </div>
-        <div id="ctlBox" style="display:none">
-          <label>CTL (manual)</label>
-          <input id="CTL" type="number" step="any" placeholder="e.g. 0.98523">
-        </div>
-      </div>
-
-      <div class="grid2" style="margin-top:8px">
-        <div>
-          <label>Density @ T<sub>ref</sub> (kg/m³, optional)</label>
-          <input id="rho" type="number" step="any" placeholder="e.g. 840">
-        </div>
-        <div>
-          <label>HHV (MJ/kg, optional)</label>
-          <input id="hhv" type="number" step="any" placeholder="e.g. 44">
-        </div>
-      </div>
-
-      <div class="btn-row">
-        <button class="btn" onclick="calc()">Calculate</button>
-        <button class="btn" onclick="exportXLSX()">Export as Spreadsheet</button>
-        <button class="btn" onclick="openDisclaimer()">Disclaimers & Standards</button>
-      </div>
-      <div class="muted" style="margin-top:6px;font-size:.85rem">Tip: You can enter table CTL directly, or use α for a quick approximation.</div>
-    </section>
-
-    <section class="card">
-      <h2>Results</h2>
-      <div class="grid3" style="margin-top:8px">
-        <div>
-          <label>CTL used</label>
-          <div id="outCTL" class="out">—</div>
-        </div>
-        <div>
-          <label>Corrected Volume (V<sub>corr</sub>)</label>
-          <div id="outVcorr" class="out">—</div>
-        </div>
-        <div>
-          <label>Unit</label>
-          <div id="outUnit" class="out">—</div>
-        </div>
-      </div>
-      <div class="grid2" style="margin-top:12px">
-        <div>
-          <label>Mass (optional)</label>
-          <div id="outMass" class="out">—</div>
-        </div>
-        <div>
-          <label>Energy (optional)</label>
-          <div id="outEnergy" class="out">—</div>
-        </div>
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>Reference Documents</h2>
-      <div class="grid2" style="margin-top:8px">
-        <div>
-          <label>Select a document to open</label>
-          <select id="docSelect" onchange="openDoc()">
-            <option value="">— Choose —</option>
-            <option value="https://www.apiwebstore.org/standards/11_1">API MPMS 11.1 – Temp/Pressure Volume Correction (landing)</option>
-            <option value="https://www.api.org/publications-standards-and-statistics/standards/standards-addenda-and-errata/standards-addenda-and-errata/~/media/a2af8a6e504e478389b286779472edaf.ashx">API MPMS 11.1 Addendum extract (PDF)</option>
-            <option value="https://www.iso.org/standard/79179.html">ISO 5167-1:2022 – General principles (landing)</option>
-            <option value="https://www.iso.org/standard/79180.html">ISO 5167-2:2022 – Orifice plates (landing)</option>
-            <option value="https://www.oiml.org/en/files/pdf_r/r117-1-e07.pdf">OIML R117-1 (2007) – Liquids other than water (PDF)</option>
-            <option value="https://oiml.nim.ac.cn/sites/default/files/media/document/2020-07/r117-1-e19.pdf">OIML R117-1 (2019) – Liquids other than water (PDF)</option>
-            <option value="https://law.resource.org/pub/us/cfr/ibr/001/aga.3.1.1990.pdf">AGA Report No.3 Part 1 (PDF)</option>
-          </select>
-        </div>
-        <div>
-          <label>About</label>
-          <div class="out muted">This list opens official landings or public PDFs where available.</div>
-        </div>
-      </div>
-    </section>
-
-   <section class="card">
-  <h2>Notes</h2>
-  <ul class="list muted">
-    <li><b>V<sub>corr</sub> = V × CTL</b>. If available, prefer API table CTL (Manual mode).</li>
-    <li>Approximate CTL uses <b>CTL ≈ exp[-α (T − Tref</sub>)]</b>. Good for small ΔT.</li>
-    <li>Mass (kg) = V<sub>corr</sub> (m³) × ρ<sub>ref</sub> (kg/m³). Energy (MJ) = Mass × HHV.</li>
-    <li>
-      📕 Need full guidance?  
-      <a href="Asianloop_Custody_Calculator_Manual.pdf" target="_blank" 
-         style="color:#22d3ee; font-weight:bold; text-decoration:none;">
-         Open the User Manual (PDF)
-      </a>
-    </li>
-  </ul>
-</section>
-
-
-    <footer>
-      <div>Copyright © Asianloop Sdn Bhd Malaysia. All rights reserved.</div>
-      <div><a href="https://asian-loop.com" target="_blank" rel="noopener">asian-loop.com</a> |
-        <a href="https://www.linkedin.com/company/asianloop-sdn-bhd/" target="_blank" rel="noopener">LinkedIn</a></div>
-    </footer>
-  </main>
-
-  <!-- Disclaimer modal -->
-  <div id="disclaimerModal" class="modal" aria-hidden="true">
-    <div class="box">
-      <span class="close" onclick="closeDisclaimer()" aria-label="Close">&times;</span>
-      <h2 style="margin-top:0">Disclaimers, Standards & Assumptions</h2>
-      <p class="muted">This calculator is intended for <b>preliminary engineering</b> and training use. It does not replace certified custody transfer systems.</p>
-      <h3>Standards Referenced</h3>
-      <ul class="list">
-        <li><b>API MPMS 11.1</b> – Temperature and pressure volume correction factors (generalized crude, refined products, lube oils). Amended 2007/2008. (See API landing/addendum.)</li>
-        <li><b>ISO 5167</b> – Flow measurement by differential pressure devices (general principles, orifice plates).</li>
-        <li><b>OIML R117</b> – Measuring systems for liquids other than water (metrological and technical requirements).</li>
-        <li><b>AGA Report No. 3</b> – Orifice metering of natural gas and related hydrocarbon fluids (gas—outside scope of this simple liquid calculator).</li>
-      </ul>
-      <h3>Scope & Intended Use</h3>
-      <ul class="list">
-        <li>Applies to <b>single-phase liquid hydrocarbons</b> with known density at T<sub>ref</sub>.</li>
-        <li>Provides corrected volume, optional mass and energy (if ρ and HHV are provided).</li>
-        <li>When used for custody/contractual purposes, <b>use official API table CTL</b> (Manual mode) and document inputs.</li>
-      </ul>
-      <h3>Assumptions</h3>
-      <ul class="list">
-        <li>Homogeneous, single-phase liquid; negligible dissolved gas slippage in measurement.</li>
-        <li>α (thermal expansion) approximation acceptable for modest ΔT; properties near reference conditions.</li>
-      </ul>
-      <h3>Limitations / Not Covered</h3>
-      <ul class="list">
-        <li><b>Gas</b> custody transfer (requires compressibility; AGA8/AGA3 calculations).</li>
-        <li><b>Multiphase</b> or entrained gas/liquid systems.</li>
-        <li>Meters outside calibration/traceability, or extreme temperatures/pressures where generalized factors fail.</li>
-        <li>Viscosity effects, pressure correction (CPL) and detailed uncertainty budgets are not included.</li>
-      </ul>
-      <p class="muted">© Asianloop Sdn Bhd. Use at your own discretion. Always verify against governing contracts/standards.</p>
     </div>
+
+    <div class="grid2" style="margin-top:8px">
+      <div>
+        <label>Measured Temperature T (°C)</label>
+        <input id="T" type="number" step="any" placeholder="e.g. 28">
+      </div>
+      <div>
+        <label>Reference Temperature T<sub>ref</sub> (°C)</label>
+        <input id="Tref" type="number" step="any" value="15">
+      </div>
+    </div>
+
+    <div class="grid3" style="margin-top:8px">
+      <div>
+        <label>CTL Mode</label>
+        <select id="ctlMode">
+          <option value="approx">Approx (using α)</option>
+          <option value="manual">Manual CTL (API table)</option>
+        </select>
+      </div>
+      <div id="alphaBox">
+        <label>Thermal Expansion Coefficient α (per °C)</label>
+        <input id="alpha" type="number" step="any" value="0.0007" placeholder="0.00065–0.00085 crude">
+      </div>
+      <div id="ctlBox" style="display:none">
+        <label>CTL (manual)</label>
+        <input id="CTL" type="number" step="any" placeholder="e.g. 0.98523">
+      </div>
+    </div>
+
+    <div class="grid2" style="margin-top:8px">
+      <div>
+        <label>Density @ T<sub>ref</sub> (kg/m³, optional)</label>
+        <input id="rho" type="number" step="any" placeholder="e.g. 840">
+      </div>
+      <div>
+        <label>HHV (MJ/kg, optional)</label>
+        <input id="hhv" type="number" step="any" placeholder="e.g. 44">
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn" onclick="calc()">Calculate</button>
+      <button class="btn" onclick="exportXLSX()">Export as Spreadsheet</button>
+      <button class="btn" onclick="openDisclaimer()">Disclaimers & Standards</button>
+    </div>
+    <div class="muted" style="margin-top:6px;font-size:.85rem">Tip: You can enter table CTL directly, or use α for a quick approximation.</div>
+  </section>
+
+  <section class="card">
+    <h2>Results — Liquids</h2>
+    <div class="grid3" style="margin-top:8px">
+      <div>
+        <label>CTL used</label>
+        <div id="outCTL" class="out">—</div>
+      </div>
+      <div>
+        <label>Corrected Volume (V<sub>corr</sub>)</label>
+        <div id="outVcorr" class="out">—</div>
+      </div>
+      <div>
+        <label>Unit</label>
+        <div id="outUnit" class="out">—</div>
+      </div>
+    </div>
+    <div class="grid2" style="margin-top:12px">
+      <div>
+        <label>Mass (optional)</label>
+        <div id="outMass" class="out">—</div>
+      </div>
+      <div>
+        <label>Energy (optional)</label>
+        <div id="outEnergy" class="out">—</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================== DRY GAS (new) ================== -->
+  <section class="card">
+    <h2>Inputs — Dry Gas (Natural Gas)</h2>
+    <div class="grid3" style="margin-top:8px">
+      <div>
+        <label>Volumetric Flow @ Line (Q<sub>line</sub>)</label>
+        <input id="g_Qline" type="number" step="any" placeholder="e.g. 5000">
+        <div class="hint">Units at right</div>
+      </div>
+      <div>
+        <label>Q<sub>line</sub> Unit</label>
+        <select id="g_Qunit">
+          <option value="sm3h">Sm³/h (assume line m³/h)</option>
+          <option value="m3h">m³/h (line)</option>
+          <option value="mscfh">MSCF/h (line)</option>
+        </select>
+      </div>
+      <div>
+        <label>Standard Conditions Preset</label>
+        <select id="g_stdPreset">
+          <option value="15C">P<sub>std</sub>=1 atm, T<sub>std</sub>=15 °C</option>
+          <option value="60F">P<sub>std</sub>=14.696 psia, T<sub>std</sub>=60 °F</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid3" style="margin-top:8px">
+      <div>
+        <label>Flowing Pressure P (abs)</label>
+        <input id="g_P" type="number" step="any" placeholder="e.g. 60">
+        <div class="hint">Units at right</div>
+      </div>
+      <div>
+        <label>Pressure Unit</label>
+        <select id="g_Punit">
+          <option value="bar">bar(a)</option>
+          <option value="kpa">kPa(a)</option>
+          <option value="psia">psia</option>
+        </select>
+      </div>
+      <div>
+        <label>Flowing Temperature T (°C)</label>
+        <input id="g_T" type="number" step="any" placeholder="e.g. 30">
+      </div>
+    </div>
+
+    <div class="grid3" style="margin-top:8px">
+      <div>
+        <label>Z-Factor Source</label>
+        <select id="g_Zmode">
+          <option value="manual">Manual Z (recommended if you have dataset)</option>
+          <option value="gravity">Approx Z via Gas Gravity (Papay)</option>
+          <option value="compo">Approx Z from Composition Dataset (Kay + Papay)</option>
+        </select>
+      </div>
+      <div id="g_manualZ_box">
+        <label>Z (dimensionless)</label>
+        <input id="g_Zmanual" type="number" step="any" placeholder="e.g. 0.92">
+      </div>
+      <div id="g_gamma_box" style="display:none">
+        <label>Gas Specific Gravity γ<sub>g</sub> (air=1)</label>
+        <input id="g_gamma" type="number" step="any" placeholder="e.g. 0.62">
+      </div>
+    </div>
+
+    <div id="g_compo_block" class="grid2" style="margin-top:8px; display:none">
+      <div>
+        <label>Composition Dataset (mole %, any order)</label>
+        <textarea id="g_compo" placeholder="Example:
+CH4=93.2
+C2H6=3.1
+C3H8=1.2
+iC4=0.5
+nC4=0.4
+N2=0.8
+CO2=0.8"></textarea>
+        <div class="hint">Supported keys: CH4, C2H6, C3H8, iC4, nC4, iC5, nC5, C6, N2, CO2, H2S</div>
+      </div>
+      <div>
+        <label>Notes</label>
+        <div class="out muted">We compute pseudo-critical <b>Ppc</b> (psia) and <b>Tpc</b> (°R) by Kay’s rule, then Z via <b>Papay</b>. This is an <b>approximation</b>. For contractual accuracy, use Z from your certified flow computer / dataset.</div>
+      </div>
+    </div>
+
+    <div class="grid3" style="margin-top:8px">
+      <div>
+        <label>Optional: Gas Density @ std (kg/m³) or SG (γ<sub>g</sub>)</label>
+        <input id="g_rhoStd" type="number" step="any" placeholder="e.g. 0.72 (SG) or 0.8 kg/m³">
+        <div class="hint">If single number ≤ 2 → treated as SG; otherwise kg/m³.</div>
+      </div>
+      <div>
+        <label>Optional: Gross Calorific Value (MJ/Sm³ or MJ/SCM)</label>
+        <input id="g_gcv" type="number" step="any" placeholder="e.g. 38">
+      </div>
+      <div>
+        <label>&nbsp;</label>
+        <div class="out muted">Mass & energy outputs need SG/ρ and GCV.</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn" onclick="calcGas()">Calculate (Dry Gas)</button>
+      <button class="btn" onclick="exportXLSX()">Export as Spreadsheet</button>
+      <button class="btn" onclick="openDisclaimer()">Disclaimers & Standards</button>
+    </div>
+    <div class="muted" style="margin-top:6px;font-size:.85rem">Z source note: <b>Manual Z</b> best (dataset). <b>Gravity/Composition</b> use approximations.</div>
+  </section>
+
+  <section class="card">
+    <h2>Results — Dry Gas</h2>
+    <div class="grid3" style="margin-top:8px">
+      <div>
+        <label>Z used</label>
+        <div id="g_outZ" class="out">—</div>
+      </div>
+      <div>
+        <label>Q<sub>std</sub> (standard volume flow)</label>
+        <div id="g_outQstd" class="out">—</div>
+      </div>
+      <div>
+        <label>Standard Base</label>
+        <div id="g_outStd" class="out">—</div>
+      </div>
+    </div>
+    <div class="grid2" style="margin-top:12px">
+      <div>
+        <label>Mass Flow</label>
+        <div id="g_outMdot" class="out">—</div>
+      </div>
+      <div>
+        <label>Energy Flow</label>
+        <div id="g_outEdot" class="out">—</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================== References & Notes ================== -->
+  <section class="card">
+    <h2>Reference Documents</h2>
+    <div class="grid2" style="margin-top:8px">
+      <div>
+        <label>Select a document to open</label>
+        <select id="docSelect" onchange="openDoc()">
+          <option value="">— Choose —</option>
+          <option value="https://www.apiwebstore.org/standards/11_1">API MPMS 11.1 – Temp/Pressure Volume Correction (landing)</option>
+          <option value="https://www.api.org/publications-standards-and-statistics/standards/standards-addenda-and-errata/standards-addenda-and-errata/~/media/a2af8a6e504e478389b286779472edaf.ashx">API MPMS 11.1 Addendum extract (PDF)</option>
+          <option value="https://www.iso.org/standard/79179.html">ISO 5167-1:2022 – General principles (landing)</option>
+          <option value="https://www.iso.org/standard/79180.html">ISO 5167-2:2022 – Orifice plates (landing)</option>
+          <option value="https://www.oiml.org/en/files/pdf_r/r117-1-e07.pdf">OIML R117-1 (2007) – Liquids other than water (PDF)</option>
+          <option value="https://oiml.nim.ac.cn/sites/default/files/media/document/2020-07/r117-1-e19.pdf">OIML R117-1 (2019) – Liquids other than water (PDF)</option>
+          <option value="https://law.resource.org/pub/us/cfr/ibr/001/aga.3.1.1990.pdf">AGA Report No.3 Part 1 (PDF)</option>
+        </select>
+      </div>
+      <div>
+        <label>About</label>
+        <div class="out muted">This list opens official landings or public PDFs where available.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Notes</h2>
+    <ul class="list muted">
+      <li><b>V<sub>corr</sub> = V × CTL</b>. If available, prefer API table CTL (Manual mode).</li>
+      <li>Approximate CTL uses <b>CTL ≈ exp[-α (T − T<sub>ref</sub>)]</b>. Good for small ΔT.</li>
+      <li>Mass (kg) = V<sub>corr</sub> (m³) × ρ<sub>ref</sub> (kg/m³). Energy (MJ) = Mass × HHV.</li>
+      <li><b>Gas:</b> Z via Papay is an <b>approximation</b>. Use Manual Z from certified datasets for contractual purposes.</li>
+      <li>📕 Need full guidance? <a href="Asianloop_Custody_Calculator_Manual.pdf" target="_blank" style="color:#22d3ee; font-weight:bold; text-decoration:none;">Open the User Manual (PDF)</a></li>
+    </ul>
+  </section>
+
+  <footer>
+    <div>Copyright © Asianloop Sdn Bhd Malaysia. All rights reserved.</div>
+    <div><a href="https://asian-loop.com" target="_blank" rel="noopener">asian-loop.com</a> |
+      <a href="https://www.linkedin.com/company/asianloop-sdn-bhd/" target="_blank" rel="noopener">LinkedIn</a></div>
+  </footer>
+</main>
+
+<!-- Disclaimer modal -->
+<div id="disclaimerModal" class="modal" aria-hidden="true">
+  <div class="box">
+    <span class="close" onclick="closeDisclaimer()" aria-label="Close">&times;</span>
+    <h2 style="margin-top:0">Disclaimers, Standards & Assumptions</h2>
+    <p class="muted">This calculator is intended for <b>preliminary engineering</b> and training use. It does not replace certified custody transfer systems.</p>
+    <h3>Standards Referenced</h3>
+    <ul class="list">
+      <li><b>API MPMS 11.1</b> – Temperature and pressure volume correction factors (liquids).</li>
+      <li><b>ISO 5167</b> – DP flow (orifice etc.).</li>
+      <li><b>OIML R117</b> – Liquids other than water.</li>
+      <li><b>AGA Rpt No. 3/7/9</b> – Gas metering (orifice/turbine/ultrasonic).</li>
+      <li><b>AGA Rpt No. 8</b> – Compressibility (Z) of natural gas.</li>
+    </ul>
+    <h3>Scope & Intended Use</h3>
+    <ul class="list">
+      <li>Liquids: corrected volume, optional mass & energy.</li>
+      <li>Dry Gas: standardized volume using Z; Papay Z is approximate unless Manual Z is provided.</li>
+    </ul>
+    <h3>Limitations</h3>
+    <ul class="list">
+      <li>Not for contractual tickets; use certified systems.</li>
+      <li>Wet gas multiphase corrections are not included here.</li>
+    </ul>
+    <p class="muted">© Asianloop Sdn Bhd. Always verify against governing contracts/standards.</p>
   </div>
+</div>
 
 <script>
-  // --- Units map ---
+  /* ================= LIQUIDS (your original logic) ================= */
   const unitToM3 = { m3:1, L:0.001, bbl:0.1589872949, galUS:0.003785411784 };
 
-  // --- UI toggles for CTL mode ---
   const ctlMode = document.getElementById('ctlMode');
   const alphaBox = document.getElementById('alphaBox');
   const ctlBox = document.getElementById('ctlBox');
@@ -277,18 +388,9 @@
     ctlBox.style.display   = (m === 'manual') ? '' : 'none';
   });
 
-  // --- Approximate CTL ---
-  function calcCTLApprox(alpha, T, Tref) {
-    return Math.exp(-alpha * (T - Tref));
-  }
+  function calcCTLApprox(alpha, T, Tref) { return Math.exp(-alpha * (T - Tref)); }
+  function fmt(x, digits=7) { if (x==null || isNaN(x)) return '—'; return Number(x).toPrecision(digits); }
 
-  // --- Formatting helper ---
-  function fmt(x, digits=7) {
-    if (x === null || x === undefined || isNaN(x)) return '—';
-    return Number(x).toPrecision(digits);
-  }
-
-  // --- Calculate ---
   function calc() {
     const V = parseFloat(document.getElementById('V').value);
     const unitV = document.getElementById('unitV').value;
@@ -299,11 +401,7 @@
     const CTLmanual = parseFloat(document.getElementById('CTL').value);
     const rho = parseFloat(document.getElementById('rho').value);
     const hhv = parseFloat(document.getElementById('hhv').value);
-
-    if (!(V > 0) || !(unitV in unitToM3) || isNaN(T) || isNaN(Tref)) {
-      alert('Please provide measured volume, unit, temperature, and reference temperature.');
-      return;
-    }
+    if (!(V > 0) || !(unitV in unitToM3) || isNaN(T) || isNaN(Tref)) { alert('Please provide measured volume, unit, temperature, and reference temperature.'); return; }
 
     let CTL;
     if (mode === 'manual') {
@@ -317,12 +415,8 @@
     const V_m3 = V * unitToM3[unitV];
     const Vcorr_m3 = V_m3 * CTL;
     const Vcorr_inUnit = Vcorr_m3 / unitToM3[unitV];
-
     let massKg = null, energyMJ = null;
-    if (rho > 0) {
-      massKg = Vcorr_m3 * rho; // kg
-      if (hhv > 0) energyMJ = massKg * hhv; // MJ
-    }
+    if (rho > 0) { massKg = Vcorr_m3 * rho; if (hhv > 0) energyMJ = massKg * hhv; }
 
     document.getElementById('outCTL').textContent = fmt(CTL, 7);
     document.getElementById('outVcorr').textContent = fmt(Vcorr_inUnit, 7);
@@ -330,85 +424,276 @@
     document.getElementById('outMass').textContent = (massKg!=null) ? (fmt(massKg, 7) + ' kg') : '—';
     document.getElementById('outEnergy').textContent = (energyMJ!=null) ? (fmt(energyMJ, 7) + ' MJ') : '—';
 
-    // Save last calc for export
+    localStorage.setItem("asianloop_last_calc", JSON.stringify({ type:"liquid", V, unitV, T, Tref, ctlMode:mode, alpha, CTL, rho, hhv, Vcorr_inUnit, massKg, energyMJ }));
+  }
+
+  /* ================= DRY GAS (new) ================= */
+
+  // Toggle Z source UI
+  const gZmode = document.getElementById('g_Zmode');
+  const gManualBox = document.getElementById('g_manualZ_box');
+  const gGammaBox = document.getElementById('g_gamma_box');
+  const gCompoBlock = document.getElementById('g_compo_block');
+  gZmode.addEventListener('change', ()=>{
+    const m=gZmode.value;
+    gManualBox.style.display = (m==='manual')?'':'none';
+    gGammaBox.style.display  = (m==='gravity')?'':'none';
+    gCompoBlock.style.display= (m==='compo')?'':'none';
+  });
+
+  // Critical properties (for Kay's mixing)
+  const CRIT = {
+    CH4:{Tc:343.0, Pc:667.0},  // Tc in °R, Pc psia
+    C2H6:{Tc:549.8, Pc:708.0},
+    C3H8:{Tc:666.0, Pc:616.0},
+    iC4:{Tc:735.4, Pc:527.9},
+    nC4:{Tc:765.3, Pc:550.7},
+    iC5:{Tc:829.9, Pc:490.4},
+    nC5:{Tc:845.4, Pc:488.6},
+    C6:{Tc:913.4, Pc:436.9},
+    N2:{Tc:227.2, Pc:492.3},
+    CO2:{Tc:547.6, Pc:1071.0},
+    H2S:{Tc:672.4, Pc:1306.0}
+  };
+
+  function parseCompo(text){
+    const lines = (text||'').split(/\n|,|;/).map(s=>s.trim()).filter(Boolean);
+    let sum=0, comp={};
+    for(const ln of lines){
+      const m = ln.match(/^([A-Za-z0-9]+)\s*[:=]\s*([\d.]+)%?$/);
+      if(!m) continue;
+      const key = m[1].toUpperCase();
+      const val = parseFloat(m[2]);
+      if(isNaN(val)) continue;
+      const map = {CH4:'CH4', C1:'CH4', C2H6:'C2H6', C3H8:'C3H8', IC4:'iC4', NC4:'nC4', IC5:'iC5', NC5:'nC5', C6:'C6', N2:'N2', CO2:'CO2', H2S:'H2S'};
+      const k2 = map[key] || key;
+      if(CRIT[k2]) { comp[k2]=(comp[k2]||0)+val; sum+=val; }
+    }
+    if(sum>0){ for(const k in comp){ comp[k]=comp[k]/sum; } } // normalize to 1.0
+    return comp; // mole fractions
+  }
+
+  // Kay's mixing (pseudo-critical)
+  function kayPseudoCritical(comp){
+    let Tpc=0, Ppc=0, sum=0;
+    for(const k in comp){ const x=comp[k]; if(CRIT[k]){ Tpc += x*CRIT[k].Tc; Ppc += x*CRIT[k].Pc; sum+=x; } }
+    if(sum<=0){ return {Tpc:null,Ppc:null}; }
+    return {Tpc, Ppc};
+  }
+
+  // Papay Z correlation (Pr, Tr) — approximate
+  // Z = 1 - 3.52*Pr*exp(-2.26*Tr) + 0.247*Pr^2*exp(-1.878*Tr)
+  function zPapay(Pr, Tr){
+    return 1 - 3.52*Pr*Math.exp(-2.26*Tr) + 0.247*Math.pow(Pr,2)*Math.exp(-1.878*Tr);
+  }
+
+  // Ppc/Tpc from gas gravity (SG relative to air) — Lee-Kesler-ish approx for sweet gas
+  // Ppc(psia) ≈ 677 + 15*γg - 37.5*γg^2
+  // Tpc(°R)   ≈ 168 + 325*γg - 12.5*γg^2
+  function pseudoCritFromGamma(gamma){
+    const Ppc = 677 + 15*gamma - 37.5*gamma*gamma;
+    const Tpc = 168 + 325*gamma - 12.5*gamma*gamma;
+    return {Ppc,Tpc};
+  }
+
+  // Unit helpers
+  function bar_to_psia(p){ return p*14.5037738; }
+  function kpa_to_psia(p){ return p*0.145037738; }
+  function C_to_R(tC){ return (tC + 273.15)*9/5; } // °R
+  function m3h_to_scfh(q){ return q*35.3146667; } // line m3/h -> SCF/h (as volumetric conversion basis)
+  function scfh_to_m3h(q){ return q/35.3146667; }
+
+  function stdPreset(){
+    const preset = document.getElementById('g_stdPreset').value;
+    if(preset==='60F'){ return {Pstd_psia:14.696, Tstd_R:(60+459.67)}; }
+    // default 15C & 1 atm
+    return {Pstd_psia:14.6959, Tstd_R:C_to_R(15)};
+  }
+
+  // Gas density at standard conditions if SG given:
+  // ρstd ≈ SG * 1.225 kg/m3 at 15C & 1 atm (air density ~1.225 kg/m3)
+  function rhoStdFromSG(sg){ return sg*1.225; }
+
+  function calcGas(){
+    // Inputs
+    const Qline = parseFloat(document.getElementById('g_Qline').value);
+    const Qunit = document.getElementById('g_Qunit').value;
+    const P = parseFloat(document.getElementById('g_P').value);
+    const Punit = document.getElementById('g_Punit').value;
+    const T_C = parseFloat(document.getElementById('g_T').value);
+    const Zmode = document.getElementById('g_Zmode').value;
+    const Zmanual = parseFloat(document.getElementById('g_Zmanual').value);
+    const gamma = parseFloat(document.getElementById('g_gamma').value);
+    const compoText = document.getElementById('g_compo').value;
+    const rhoStdInput = parseFloat(document.getElementById('g_rhoStd').value);
+    const gcv = parseFloat(document.getElementById('g_gcv').value);
+
+    if(!(Qline>0) || isNaN(P) || isNaN(T_C)){ alert("Enter Q_line, P, and T."); return; }
+
+    // Convert units
+    let P_psia = P;
+    if(Punit==='bar') P_psia = bar_to_psia(P);
+    if(Punit==='kpa') P_psia = kpa_to_psia(P);
+    const T_R = C_to_R(T_C);
+    const {Pstd_psia, Tstd_R} = stdPreset();
+
+    // Determine Z
+    let Z=null, Zmeta='';
+
+    if(Zmode==='manual'){
+      if(!(Zmanual>0 && Zmanual<2)){ alert("Enter a valid manual Z."); return; }
+      Z = Zmanual; Zmeta='Manual';
+    } else if(Zmode==='gravity'){
+      if(!(gamma>0 && gamma<2)){ alert("Enter a valid gas specific gravity (γg)."); return; }
+      const {Ppc,Tpc} = pseudoCritFromGamma(gamma);
+      const Pr = P_psia / Ppc;
+      const Tr = T_R / Tpc;
+      Z = zPapay(Pr,Tr);
+      Zmeta = `Papay via γg=${gamma.toFixed(3)} (Ppc=${Ppc.toFixed(1)} psia, Tpc=${Tpc.toFixed(1)} °R)`;
+    } else {
+      // composition
+      const comp = parseCompo(compoText);
+      const kc = kayPseudoCritical(comp);
+      if(!(kc.Ppc>0 && kc.Tpc>0)){ alert("Composition parse failed. Provide mole% lines like CH4=93.2, CO2=0.8, ..."); return; }
+      const Pr = P_psia / kc.Ppc;
+      const Tr = T_R / kc.Tpc;
+      Z = zPapay(Pr,Tr);
+      Zmeta = `Papay via Kay mix (Ppc=${kc.Ppc.toFixed(1)} psia, Tpc=${kc.Tpc.toFixed(1)} °R)`;
+    }
+
+    // Compute Qstd from Qline using real gas law:
+    // Vstd = Vline * (P / (Z*Pstd)) * (Tstd / T)
+    // Ensure Qline is at line conditions
+    let Qline_scfh;
+    if(Qunit==='m3h') Qline_scfh = m3h_to_scfh(Qline);
+    else if(Qunit==='mscfh') Qline_scfh = Qline*1000; // MSCFH to SCFH (line unit label)
+    else Qline_scfh = Qline; // treat as SCFH-like base if user selected Sm3/h; we’ll convert at end
+
+    const Qstd_scfh = Qline_scfh * (P_psia/(Z*Pstd_psia)) * (Tstd_R/T_R);
+    // Report in Sm3/h as primary
+    const Qstd_sm3h = scfh_to_m3h(Qstd_scfh);
+
+    // Mass & Energy (optional)
+    let rhoStd = null;
+    if(rhoStdInput>0){
+      if(rhoStdInput<=2){ // treat as SG
+        rhoStd = rhoStdFromSG(rhoStdInput);
+      } else {
+        rhoStd = rhoStdInput; // kg/m3
+      }
+    }
+    let mdot = null, edot = null;
+    if(rhoStd>0){
+      // mass flow (kg/h) = rho_std (kg/m3) * Qstd (m3/h)
+      mdot = rhoStd * Qstd_sm3h;
+      if(gcv>0){
+        // energy flow: MJ/h = GCV (MJ/Sm3) * Qstd (Sm3/h)
+        edot = gcv * Qstd_sm3h;
+      }
+    }
+
+    // Outputs
+    document.getElementById('g_outZ').textContent = `${fmt(Z,6)} (${Zmeta})`;
+    document.getElementById('g_outQstd').textContent = `${fmt(Qstd_sm3h,7)} Sm³/h`;
+    const stdLabel = (document.getElementById('g_stdPreset').value==='60F')?'14.696 psia & 60 °F':'1 atm & 15 °C';
+    document.getElementById('g_outStd').textContent = stdLabel;
+    document.getElementById('g_outMdot').textContent = (mdot!=null)? `${fmt(mdot,7)} kg/h` : '—';
+    document.getElementById('g_outEdot').textContent = (edot!=null)? `${fmt(edot,7)} MJ/h` : '—';
+
+    // Persist last gas calc
     localStorage.setItem("asianloop_last_calc", JSON.stringify({
-      V, unitV, T, Tref, mode, alpha, CTL: CTL, rho, hhv,
-      Vcorr_inUnit, massKg, energyMJ
+      type:"gas",
+      Qline, Qunit, P:P_psia, Punit:"psia(abs)", T_C, T_R,
+      Pstd_psia, Tstd_R, Z, Zmeta,
+      Qstd_sm3h, rhoStd, gcv, mdot, edot
     }));
   }
 
-  // --- Export to XLSX ---
+  /* ================= Export (works for whichever was last) ================= */
   function exportXLSX(){
     const res = JSON.parse(localStorage.getItem("asianloop_last_calc") || "null");
     if (!res) { alert("No result to export. Run a calculation first."); return; }
-    const rows = [
-      ["Asianloop Custody Calculator — Export"],
-      ["Date", new Date().toISOString()],
-      [],
-      ["Inputs"],
-      ["Measured Volume", res.V, res.unitV],
-      ["Measured Temp (°C)", res.T],
-      ["Reference Temp (°C)", res.Tref],
-      ["Mode", res.mode],
-      ["Alpha (per °C)", res.alpha || ""],
-      ["CTL (used)", res.CTL],
-      ["Density @ Tref (kg/m³)", res.rho || ""],
-      ["HHV (MJ/kg)", res.hhv || ""],
-      [],
-      ["Results"],
-      ["Corrected Volume", res.Vcorr_inUnit, res.unitV],
-      ["Mass (kg)", res.massKg || ""],
-      ["Energy (MJ)", res.energyMJ || ""],
-      [],
-      ["Notes"],
-      ["Vcorr = V × CTL; prefer API table CTL for contractual purposes.", ""]
-    ];
+
+    let rows = [["Asianloop Custody Calculator — Export"], ["Date", new Date().toISOString()], [],];
+
+    if(res.type==="liquid"){
+      rows = rows.concat([
+        ["Mode","Liquids"],
+        [],
+        ["Inputs"],
+        ["Measured Volume", res.V, res.unitV],
+        ["Measured Temp (°C)", res.T],
+        ["Reference Temp (°C)", res.Tref],
+        ["CTL Mode", res.ctlMode],
+        ["Alpha (per °C)", res.alpha || ""],
+        ["CTL (used)", res.CTL],
+        ["Density @ Tref (kg/m³)", res.rho || ""],
+        ["HHV (MJ/kg)", res.hhv || ""],
+        [],
+        ["Results"],
+        ["Corrected Volume", res.Vcorr_inUnit, res.unitV],
+        ["Mass (kg)", res.massKg || ""],
+        ["Energy (MJ)", res.energyMJ || ""],
+        [],
+        ["Notes"], ["Vcorr = V × CTL; prefer API table CTL for contractual purposes.", ""]
+      ]);
+    } else if(res.type==="gas"){
+      rows = rows.concat([
+        ["Mode","Dry Gas"],
+        [],
+        ["Inputs"],
+        ["Q_line", res.Qline, res.Qunit],
+        ["P (psia abs)", res.P],
+        ["T (°C)", res.T_C],
+        ["Std base", (res.Tstd_R===C_to_R(15)?"15°C & 1 atm":"60°F & 14.696 psia")],
+        ["Z used", res.Z, res.Zmeta],
+        [],
+        ["Results"],
+        ["Q_std", res.Qstd_sm3h, "Sm³/h"],
+        ["ρ_std (kg/m³)", res.rhoStd || ""],
+        ["GCV (MJ/Sm³)", res.gcv || ""],
+        ["Mass flow (kg/h)", res.mdot || ""],
+        ["Energy flow (MJ/h)", res.edot || ""],
+        [],
+        ["Notes"], ["Z via Papay is approximate unless Manual Z provided.", ""]
+      ]);
+    }
+
     const ws = XLSX.utils.aoa_to_sheet(rows);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "CustodyCalc");
-    XLSX.writeFile(wb, "asianloop_custody_calculation.xlsx");
+    const fname = res.type==="gas" ? "asianloop_drygas_calculation.xlsx" : "asianloop_liquid_calculation.xlsx";
+    XLSX.writeFile(wb, fname);
   }
 
-  // --- Docs open ---
+  /* ================= Docs + Modal ================= */
   function openDoc(){
     const url = document.getElementById('docSelect').value;
     if (url) window.open(url, "_blank", "noopener");
   }
 
+  const modal = document.getElementById('disclaimerModal');
+  let _savedScrollY = 0;
+  function openDisclaimer(){
+    _savedScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+    document.body.classList.add('no-scroll');
+    document.body.style.top = `-${_savedScrollY}px`;
+    modal.classList.add('show'); modal.setAttribute('aria-hidden','false');
+  }
+  function closeDisclaimer(){
+    modal.classList.remove('show'); modal.setAttribute('aria-hidden','true');
+    document.body.classList.remove('no-scroll'); document.body.style.top = '';
+    window.scrollTo(0, _savedScrollY);
+  }
+  modal.addEventListener('touchmove', function(e){ if (e.target === modal) e.preventDefault(); }, { passive:false });
 
-  // --- Modal controls (new) ---
-const modal = document.getElementById('disclaimerModal');
-let _savedScrollY = 0;
-
-function openDisclaimer(){
-  _savedScrollY = window.scrollY || document.documentElement.scrollTop || 0;
-  document.body.classList.add('no-scroll');
-  document.body.style.top = `-${_savedScrollY}px`;
-
-  modal.classList.add('show');
-  modal.setAttribute('aria-hidden','false');
-}
-
-function closeDisclaimer(){
-  modal.classList.remove('show');
-  modal.setAttribute('aria-hidden','true');
-
-  document.body.classList.remove('no-scroll');
-  document.body.style.top = '';
-  window.scrollTo(0, _savedScrollY);
-}
-
-modal.addEventListener('touchmove', function(e){
-  if (e.target === modal) e.preventDefault();
-}, { passive:false });
-
-window.openDisclaimer = openDisclaimer;
-window.closeDisclaimer = closeDisclaimer;
-window.calc = calc;
-window.exportXLSX = exportXLSX;
-window.openDoc = openDoc;
-
-  
+  // expose
+  window.calc = calc;
+  window.calcGas = calcGas;
+  window.exportXLSX = exportXLSX;
+  window.openDoc = openDoc;
+  window.openDisclaimer = openDisclaimer;
+  window.closeDisclaimer = closeDisclaimer;
 </script>
 </body>
 </html>
