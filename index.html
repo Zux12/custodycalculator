@@ -60,6 +60,19 @@
 
   /* Helpers */
   .hint{font-size:.8rem;color:var(--muted)}
+
+  /* Z-method badge */
+.badge {
+  display:inline-block;
+  border:1px solid var(--line);
+  border-radius:999px;
+  padding:2px 8px;
+  font-size:.8rem;
+  margin-left:6px;
+  background:#091121;
+  color:var(--muted);
+}
+
 </style>
 </head>
 <body>
@@ -526,7 +539,15 @@ CO2=0.8"></textarea>
         stdPreset: document.getElementById('g_stdPreset').value
       };
       const r = await ASIANLOOP_GAS.calcGas(inputs);
-      document.getElementById('g_outZ').textContent = `${(r.Z ?? '—')}${r.meta ? ' ('+r.meta+')':''}`;
+      // Show Z + clear method badge
+const meta = (r.meta || '');
+const method = meta.toLowerCase().includes('aga8-detail') ? 'AGA8-Detail'
+             : meta.toLowerCase().includes('gerg')        ? 'GERG-2008'
+             : meta.toLowerCase().includes('manual')      ? 'Manual Z'
+             : 'Papay';
+document.getElementById('g_outZ').innerHTML =
+  `${(r.Z!=null ? Number(r.Z).toPrecision(6) : '—')} <span class="badge">${method}</span>`;
+
       const stdLabel = (inputs.stdPreset==='60F')?'14.696 psia & 60 °F':'1 atm & 15 °C';
       document.getElementById('g_outStd').textContent = stdLabel;
       document.getElementById('g_outQstd').textContent = `${(r.Qstd_sm3h!=null? Number(r.Qstd_sm3h).toPrecision(7):'—')} Sm³/h`;
