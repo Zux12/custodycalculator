@@ -521,7 +521,6 @@ CO2=0.8"></textarea>
   modal.addEventListener('touchmove', function(e){ if (e.target === modal) e.preventDefault(); }, { passive:false });
 
 
-<script>
 // Call server-side AGA8 when composition mode is selected
 async function fetchAGA8ZFromServer(P_psia, T_R, comp){
   try {
@@ -560,7 +559,6 @@ async function fetchAGA8ZFromServer(P_psia, T_R, comp){
     return null;
   }
 }
-</script>
 
 
   async function fetchAGA8ZFromServer(P_psia, T_R, comp){
