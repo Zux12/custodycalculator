@@ -169,6 +169,144 @@
     </div>
   </section>
 
+<!-- ================== DRY GAS (Natural Gas) ================== -->
+<section class="card">
+  <h2>Inputs — Dry Gas (Natural Gas)</h2>
+
+  <div class="grid3" style="margin-top:8px">
+    <div>
+      <label>Volumetric Flow @ Line (Q<sub>line</sub>)</label>
+      <input id="g_Qline" type="number" step="any" placeholder="e.g. 5000">
+      <div class="muted" style="font-size:.8rem">Units at right</div>
+    </div>
+    <div>
+      <label>Q<sub>line</sub> Unit</label>
+      <select id="g_Qunit">
+        <option value="m3h">m³/h (line)</option>
+        <option value="mscfh">MSCF/h (line)</option>
+      </select>
+    </div>
+    <div>
+      <label>Standard Conditions Preset</label>
+      <select id="g_stdPreset">
+        <option value="15C">P<sub>std</sub>=1 atm, T<sub>std</sub>=15 °C</option>
+        <option value="60F">P<sub>std</sub>=14.696 psia, T<sub>std</sub>=60 °F</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="grid3" style="margin-top:8px">
+    <div>
+      <label>Flowing Pressure P (absolute)</label>
+      <input id="g_P" type="number" step="any" placeholder="e.g. 60">
+      <div class="muted" style="font-size:.8rem">Units at right</div>
+    </div>
+    <div>
+      <label>Pressure Unit</label>
+      <select id="g_Punit">
+        <option value="bar">bar(a)</option>
+        <option value="kpa">kPa(a)</option>
+        <option value="psia">psia</option>
+      </select>
+    </div>
+    <div>
+      <label>Flowing Temperature T (°C)</label>
+      <input id="g_T" type="number" step="any" placeholder="e.g. 30">
+    </div>
+  </div>
+
+  <div class="grid3" style="margin-top:8px">
+    <div>
+      <label>Z-Factor Source</label>
+      <select id="g_Zmode">
+        <option value="manual">Manual Z (recommended if you have dataset)</option>
+        <option value="gravity">Approx Z via Gas Gravity (Papay)</option>
+        <option value="compo">Approx Z from Composition (Kay + Papay)</option>
+      </select>
+    </div>
+    <div id="g_manualZ_box">
+      <label>Z (dimensionless)</label>
+      <input id="g_Zmanual" type="number" step="any" placeholder="e.g. 0.92">
+    </div>
+    <div id="g_gamma_box" style="display:none">
+      <label>Gas Specific Gravity γ<sub>g</sub> (air=1)</label>
+      <input id="g_gamma" type="number" step="any" placeholder="e.g. 0.62">
+    </div>
+  </div>
+
+  <div id="g_compo_block" class="grid2" style="margin-top:8px; display:none">
+    <div>
+      <label>Composition Dataset (mole %, any order)</label>
+      <textarea id="g_compo" placeholder="Example:
+CH4=93.2
+C2H6=3.1
+C3H8=1.2
+iC4=0.5
+nC4=0.4
+N2=0.8
+CO2=0.8"></textarea>
+      <div class="muted" style="font-size:.8rem">Supported: CH4, C2H6, C3H8, iC4, nC4, iC5, nC5, C6, N2, CO2, H2S, H2, O2, He, Ar, CO</div>
+      <div class="muted" style="font-size:.8rem">Note: Kay + Papay is an <b>approximation</b>. For contractual accuracy, use Manual Z or AGA8-Detail.</div>
+    </div>
+    <div>
+      <label>&nbsp;</label>
+      <div class="out muted">Tip: Paste mole% from your lab report / GC. Totals don’t need to equal 100% — we normalize.</div>
+    </div>
+  </div>
+
+  <div class="grid3" style="margin-top:8px">
+    <div>
+      <label>Optional: Gas Density @ std (kg/m³) or SG (γ<sub>g</sub>)</label>
+      <input id="g_rhoStd" type="number" step="any" placeholder="e.g. 0.62 (SG) or 0.8 kg/m³">
+      <div class="muted" style="font-size:.8rem">≤ 2 → treated as SG; otherwise kg/m³.</div>
+    </div>
+    <div>
+      <label>Optional: Gross Calorific Value (MJ/Sm³)</label>
+      <input id="g_gcv" type="number" step="any" placeholder="e.g. 38">
+    </div>
+    <div>
+      <label>&nbsp;</label>
+      <div class="out muted">Mass & energy outputs need SG/ρ and GCV.</div>
+    </div>
+  </div>
+
+  <div class="btn-row">
+    <button class="btn" onclick="runCalcGas()">Calculate (Dry Gas)</button>
+    <button class="btn" onclick="exportXLSX()">Export as Spreadsheet</button>
+    <button class="btn" onclick="openDisclaimer()">Disclaimers & Standards</button>
+  </div>
+  <div class="muted" style="margin-top:6px;font-size:.85rem">Z note: <b>Manual Z</b> best (dataset). <b>Gravity/Composition</b> use approximations; AGA8-Detail auto-used if available.</div>
+</section>
+
+<section class="card">
+  <h2>Results — Dry Gas</h2>
+  <div class="grid3" style="margin-top:8px">
+    <div>
+      <label>Z used</label>
+      <div id="g_outZ" class="out">—</div>
+    </div>
+    <div>
+      <label>Q<sub>std</sub> (standard volume flow)</label>
+      <div id="g_outQstd" class="out">—</div>
+    </div>
+    <div>
+      <label>Standard Base</label>
+      <div id="g_outStd" class="out">—</div>
+    </div>
+  </div>
+  <div class="grid2" style="margin-top:12px">
+    <div>
+      <label>Mass Flow</label>
+      <div id="g_outMdot" class="out">—</div>
+    </div>
+    <div>
+      <label>Energy Flow</label>
+      <div id="g_outEdot" class="out">—</div>
+    </div>
+  </div>
+</section>
+
+  
   <!-- ================== DRY GAS (new) ================== -->
   <section class="card">
     <h2>Inputs — Dry Gas (Natural Gas)</h2>
@@ -375,6 +513,9 @@ CO2=0.8"></textarea>
   </div>
 </div>
 
+<script src="gas.js"></script>
+
+  
 <script>
   /* ================= LIQUIDS (your original logic) ================= */
   const unitToM3 = { m3:1, L:0.001, bbl:0.1589872949, galUS:0.003785411784 };
@@ -687,6 +828,49 @@ CO2=0.8"></textarea>
   }
   modal.addEventListener('touchmove', function(e){ if (e.target === modal) e.preventDefault(); }, { passive:false });
 
+// === Gas calc bridge ===
+async function runCalcGas(){
+  try{
+    const inputs = {
+      Qline: parseFloat(document.getElementById('g_Qline').value),
+      Qunit: document.getElementById('g_Qunit').value,
+      P: parseFloat(document.getElementById('g_P').value),
+      Punit: document.getElementById('g_Punit').value,
+      T_C: parseFloat(document.getElementById('g_T').value),
+      Zmode: document.getElementById('g_Zmode').value,
+      Zmanual: parseFloat(document.getElementById('g_Zmanual').value),
+      gamma: parseFloat(document.getElementById('g_gamma').value),
+      compoText: document.getElementById('g_compo').value,
+      rhoStdInput: parseFloat(document.getElementById('g_rhoStd').value),
+      gcv: parseFloat(document.getElementById('g_gcv').value),
+      stdPreset: document.getElementById('g_stdPreset').value
+    };
+    const r = await ASIANLOOP_GAS.calcGas(inputs);
+    document.getElementById('g_outZ').textContent = `${(r.Z ?? '—')}${r.meta ? ' ('+r.meta+')':''}`;
+    const stdLabel = (inputs.stdPreset==='60F')?'14.696 psia & 60 °F':'1 atm & 15 °C';
+    document.getElementById('g_outStd').textContent = stdLabel;
+    document.getElementById('g_outQstd').textContent = `${(r.Qstd_sm3h!=null? Number(r.Qstd_sm3h).toPrecision(7):'—')} Sm³/h`;
+    document.getElementById('g_outMdot').textContent = (r.mdot!=null) ? `${Number(r.mdot).toPrecision(7)} kg/h` : '—';
+    document.getElementById('g_outEdot').textContent = (r.edot!=null) ? `${Number(r.edot).toPrecision(7)} MJ/h` : '—';
+
+    // persist for export
+    localStorage.setItem("asianloop_last_calc", JSON.stringify({
+      type:"gas",
+      Qline:inputs.Qline, Qunit:inputs.Qunit,
+      P:r.P_psia, Punit:"psia(abs)", T_C:inputs.T_C, T_R:r.T_R,
+      Pstd_psia:r.Pstd_psia, Tstd_R:r.Tstd_R,
+      Z:r.Z, Zmeta:r.meta,
+      Qstd_sm3h:r.Qstd_sm3h, rhoStd:r.rhoStd, gcv:inputs.gcv, mdot:r.mdot, edot:r.edot
+    }));
+  }catch(e){
+    alert(e.message || String(e));
+  }
+}
+window.runCalcGas = runCalcGas;
+
+
+
+  
   // expose
   window.calc = calc;
   window.calcGas = calcGas;
